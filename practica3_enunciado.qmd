@@ -23,7 +23,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 ```
 
-```{r, echo=FALSE, eval=FALSE}
+```{r, echo=FALSE, eval=FALSE, warning=FALSE}
 library(tidyverse) #Poned aquí todas las librerías que utilicéis
 library(ggplot2)
 library(dplyr)
@@ -38,38 +38,53 @@ Una empresa quiere analizar si existe relación entre las ventas de sus producto
 Organiza el conjunto de datos en una matriz, donde cada fila corresponda a un producto y cada columna a una variable, siendo la variable "Producto" únicamente un identificador. A continuación, presenta la matriz de dispersión entre las variables, utilizando puntos coloreados según el tipo de marca (consulta la sección 2.4.2 de los apuntes). Comenta los resultados obtenidos, prestando especial atención a lo que indican los valores de las correlaciones entre las variables.
 
 #### Respuesta
-
 ```{r}
 # Cargar el conjunto de datos desde un archivo CSV
 datos <- read.csv("datos_empresa.csv")
 
-# Verificar los datos
-head(datos)
+# Organizamos el conjunto de datos en una matriz
+matriz_datos <- as.matrix(datos[,-1]) #eliminam productos
 
-# Supongamos que tu dataframe se llama 'datos'
-a <- dades %>% 
-  select(1:4) %>%
-  na.omit
+#Matriz de dispersión
 
-pairs(a,
-      col= c("red", "blue")[as.integer(a$Producto)], 
-      main = "Matriz de Dispersión",
-      pch = 18)
-
+ggpairs(datos, columns = 2:4) +
+  labs(title = "Matriz de Dispersión de Ventas, Inversión y Satisfacción")
 
 ```
+
+Com que les ventes i la pulicitat tenen una correlació alta i positiva, indica que un augment en la publicitat podría estar asociat amb un augment en ventes, igual amb la satisfacció i les ventes i amb la publicitat i la satisfacció. A més, mirant els punt veim que hi ha una clara relació lineal enre les ventes ila publicitat, en vanvi en les ventes u la satisfacció, els punts es dispersen un poc més, i per tant, la relació no és tan clara.
 
 ### Apartado 2
 
 Calcula la matriz de datos centrada y el vector de medias con las formas matriciales estudiada en clase de teoría. Interpreta el vector de medias en el contexto del problema.
 
 #### Respuesta
+
+```{r}
+# Calculem el vector de medias
+vector_medias <- colMeans(datos[, 2:4])
+print("Vector de Medias:")
+vector_medias
+
+```
+La mitja en ventes entre els 10 productes.
+La mitjana de publicitat que han invertit entre els 10 productes
+La satisfacció mitjana dels 10 productes.
+
+
+```{r}
+# Matriz de datos centrada
+matriz_datos_centrada <- sweep(datos[, 2:4], 2, vector_medias)
+matriz_datos_centrada
+```
+La mitja d'aquesta matriu per cada calumna és 0.
+
+OTRA FORMA
 ```{r}
 #str(dades)
 #names(dades)
-# Asegúrate de que las columnas existen
+
 if (all(c("Ventas", "Publicidad", "Satisfaccion_cliente") %in% names(dades))) {
-  # Calcular el vector de medias
   vector_medias <- colMeans(dades[, c("Ventas", "Publicidad", "Satisfaccion_cliente")], na.rm = TRUE)
 } else {
   stop("Una o más columnas no se encuentran en el dataframe.")
@@ -88,7 +103,7 @@ matriz_centrada <- scale(dades[, c("Ventas", "Publicidad", "Satisfaccion_cliente
 
 # Mostrar la matriz centrada
 print("Matriz de Datos Centrada:")
-print(matriz_centrada)
+matriz_centrada
 
 ```
 
@@ -100,33 +115,45 @@ Calcula la matriz de covarianzas y la matriz de correlaciones utilizando las for
 #### Respuesta
 
 ```{r}
-# Supongamos que tienes un dataframe llamado 'dades' con las variables de interés
-
-# Centrar los datos (opcional para covarianzas)
-medias <- colMeans(dades[, c("Ventas", "Publicidad", "Satisfaccion_cliente")])  # Calcula la media
-datos_centrados <- scale(dades[, c("Ventas", "Publicidad", "Satisfaccion_cliente")], center = TRUE, scale = FALSE)  # Centra los datos
+# Número de observaciones
+n <- nrow(matriz_datos_centrada)
 
 # Calcular la matriz de covarianzas
-matriz_covarianzas <- cov(dades[, c("Ventas", "Publicidad", "Satisfaccion_cliente")])
-
-# Calcular la matriz de correlaciones
-matriz_correlaciones <- cor(dades[, c("Ventas", "Publicidad", "Satisfaccion_cliente")])
-# Altra forma- apuntes
-n=length(dades$Producto)
-matriu_corr <- matriz_covarianzas*(n-1)/n
-matriu_corr
-
-# Mostrar la matriz de covarianzas
-print("Matriz de Covarianzas:")
-print(matriz_covarianzas)
-
-# Mostrar la matriz de correlaciones
-print("Matriz de Correlaciones:")
-print(matriz_correlaciones)
+matriz_covarianzas <- (t(matriz_centrada) %*% matriz_centrada) / (n - 1)
+matriz_covarianzas
 
 
 ```
+En la diagonal obtenim quanta variabilitat hi dins de cada variable.
+Fora de la diagonal obtenim la covariança, que ens indica si les variables tendeixen a augmentar o a disminuir juntes, però com que totes són positives, indica que les variables tendeixen avriar ca a la mateixa direcció.
 
+```{r}
+# Calcular la matriz de correlaciones
+desviaciones <- sqrt(diag(matriz_covarianzas))
+matriz_correlaciones <- matriz_covarianzas / (desviaciones %o% desviaciones)
+matriz_correlaciones
+```
+La matriu de correlacions té valors entre -1 i 1, que indiquen la força i la direcció de les relacions entre cada variable.
+**Valors pròxims a 1: Indiquen una forta correlació positiva (quan una variable augmenta, l'altra tendeix a augmentar).**
+Valors pròxims a -1: Indiquen una forta correlació negativa (quan una variable augmenta, l'altra tendeix a disminuir).
+Valors pròxims a 0: Indiquen una relació feble o inexistent entre les variables.
+
+Si les ventes i la inversió tenen una correlació positiva i forta, això sugereix que augmentar la inversió en publicitat podría estar asociat amb l'augment en les ventes. 
+
+
+```{r}
+library(ggcorrplot)
+ggcorrplot(matriz_covarianzas, hc.order = TRUE, type = "lower",
+           colors = c("darkblue", "white", "darkred"))
+
+
+
+
+ggcorrplot(matriz_correlaciones, hc.order = TRUE, type = "lower",
+           colors = c("#6D9EC1",
+                    "yellow", "#E46726"))
+
+```
 
 
 ### Apartado 4
@@ -135,20 +162,71 @@ Calcula la matriz de correlaciones muestrales con la forma matricial estudiada e
 
 #### Respuesta
 
+```{r}
+cov<-cov(dades[,c("Ventas", "Publicidad", "Satisfaccion_cliente")])
+
+desv1<-sd(dades$Ventas)
+desv2<-sd(dades$Publicidad)
+desv3<-sd(dades$Satisfaccion_cliente)
+
+print("Su correlación de Pearson es")
+R<-(cov)/(desv3*desv2*desv1)
+R
+
+print("Comprovem")
+cor(dades[,c("Ventas", "Publicidad", "Satisfaccion_cliente")]) #no dona igual
+
+```
+
+
 
 ### Apartado 5
 
 Calcula la varianza generalizada y la variación total del conjunto de datos numéricos que estamos estudiando. Interpreta los resultados obtenidos.
 
 #### Respuesta
+```{r}
 
+```
 
 
 ### Apartado 6
 Calcula los vectores de medias y las matrices de correlacioes muestrales para cada marca de productos utilizando  las funciones que están disponibles en `R` y `tidyverse`. Comenta los resultados obtenidos.
 
 #### Respuesta
+```{r}
+vector_medias <- dades %>%
+  group_by(Producto) %>%
+  summarise(
+    Media_Ventas = mean(Ventas, na.rm = TRUE),
+    Media_Publicidad = mean(Publicidad, na.rm = TRUE),
+    Media_Satisfaccion = mean(Satisfaccion_cliente, na.rm = TRUE)
+  )
+#print("Vector de medias por producto:")
+#vector_medias
 
+matrices_correlacion <- dades %>%
+  group_by(Producto) %>%
+  summarise(Correlaciones = list(cor(select(cur_data(), Ventas, Publicidad, Satisfaccion_cliente), use = "complete.obs")),
+            .groups = 'drop') 
+print("Matrices de correlaciones muestrales por marca:")
+print(matrices_correlacion)
+
+
+
+# Imprimir matrices de correlación de forma más legible
+matrices_correlacion %>%
+  mutate(Correlaciones = map(Correlaciones, ~ as.data.frame(.x))) %>%
+  unnest(Correlaciones) %>%
+  group_by(Marca) %>%
+  summarise(Correlaciones = list(Correlaciones))
+
+
+```
+```{r}
+Correlacion_Publicidad_Satisfaccion = cor(dades$Producto, dades$Satisfaccion_cliente, use = "complete.obs")
+Correlacion_Publicidad_Satisfaccion
+```
 
 
 ### Apartado 7
@@ -157,3 +235,4 @@ Utiliza la librería `ggcorrplot` para visualizar las matrices de correlaciones 
 
 #### Respuesta
 
+prova
