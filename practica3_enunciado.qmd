@@ -234,5 +234,5 @@ Correlacion_Publicidad_Satisfaccion
 Utiliza la librería `ggcorrplot` para visualizar las matrices de correlaciones para cada marca de productos mediante mapas de calor que muestren solo las matrices triangulares inferiores. Para la marca A presenta los resultados con  `method = "square"`, para las marca B con  `method = "circle"` y, para la marca C con  `method = "circle"` pero especificando tres cifras decimales. Comenta los resultados obtenidos e indica cuál de los métodos te parece más apropiado para interpretar estos datos.
 
 #### Respuesta
-
+joderrr perqueee
 prova
